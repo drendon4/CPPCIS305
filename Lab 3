@@ -1,0 +1,385 @@
+
+
+-------NEED TO TRIM EXTRA SPACES FROM DATABASE
+
+
+--A. Provide a list all of the Customer ID, Customer Names, and States and sort the list in alphabetical order by Customer Name.
+
+SELECT		CustomerID, CustomerName, CustomerState
+FROM		CUSTOMER_t
+ORDER BY	CustomerName
+
+--B. Provide a list of all of the Customer ID, Customer Names, and States, and sort the list by state with the Customer Names in alphabetical order within each  state.
+SELECT		CustomerID, CustomerName, CustomerState
+FROM		CUSTOMER_t
+ORDER BY	CustomerState, CustomerName
+
+--C. List the customers showing the Customer ID, Customer Name, address, and sales rep name in alphabetical order by customer name
+SELECT		CustomerID, CustomerName, CustomerStreet, CustomerCity, CustomerState, CustomerZip, 
+			EmployeeFirstName + ' ' + EmployeeLastName AS SalesRepName
+FROM		CUSTOMER_t, EMPLOYEE_t
+WHERE		SalesRepID = EmployeeID
+ORDER BY	CustomerName
+
+--D. Which employees have not completed course ID = 90? 
+--Hint: name of employee only, and the best way to determine this is by having a subselect statement to determine the EmployeeIDs that have completed CourseID 90, 
+--and then have a the select statement use the output of the subselect to determine which of all of the employees are not in the list provided by the subselect.
+
+SELECT		EmployeeFirstName, EmployeeLastName
+FROM		EMPLOYEE_t
+WHERE		NOT EmployeeID IN 
+			(
+			SELECT	EmployeeID
+			FROM	EMPLOYEE_COURSE_t
+			WHERE	CourseID = 90
+			)
+
+--E. How many sales reps does PSC have? 
+--Hint: I want to know how many, not who they are. Also, realize that all sales reps are employees, but not all employees are sales reps. 
+--Also, keep in mind that being a sales rep does not mean that they have actually sold anything.
+
+SELECT		COUNT(*) AS CountOfSalesReps
+FROM		EMPLOYEE_t AS E, SALES_REPRESENTATIVE_t AS SR
+WHERE		E.EmployeeID = SR.EmployeeID
+
+--F. List all of the sales reps sorted by largest commission rate first 
+--Hint: name and sales commission rate
+
+SELECT		E.EmployeeFirstName, E.EmployeeLastName, SR.CommissionRate
+FROM		EMPLOYEE_t AS E, SALES_REPRESENTATIVE_t AS SR
+WHERE		E.EmployeeID = SR.EmployeeID
+ORDER BY	CommissionRate DESC
+
+--G. Who is the manager of the sales reps? Hint: name of the manger only.
+
+SELECT		EmployeeFirstName + ' ' + EmployeeLastName AS SaleRepManager
+FROM		EMPLOYEE_t
+WHERE		EmployeeID IN 
+			(
+			SELECT	DISTINCT E.ManagerID
+			FROM	EMPLOYEE_t AS E, SALES_REPRESENTATIVE_t AS SR
+			WHERE	E.EmployeeID = SR.EmployeeID
+			)
+
+
+--H. List the employee names of those that report directly to the manager of the sales reps. 
+--Hint: Your SQL statement will need to determine the manager first before it can determine the employees that report to him/her.
+
+
+SELECT		EmployeeFirstName + ' ' + EmployeeLastName AS EmployeeName
+FROM		EMPLOYEE_t 
+WHERE		ManagerID IN
+			(
+			SELECT	DISTINCT E.ManagerID
+			FROM	EMPLOYEE_t AS E, SALES_REPRESENTATIVE_t AS SR
+			WHERE	E.EmployeeID = SR.EmployeeID
+			)
+
+
+--I. Who is the manager of the manager of the sales reps? 
+--Hint: Show the name of the sales rep’s manager’s manager only, and your single SQL statement will need to determine the sales rep’s manager before it can determine the manager of the sales rep’s manager.
+
+SELECT		M.EmployeeFirstName + ' ' + M.EmployeeLastName AS ManagerOfManager
+FROM		EMPLOYEE_t AS E, EMPLOYEE_t AS M
+WHERE		E.ManagerID = M.EmployeeID
+  AND		E.EmployeeID IN
+			(
+			SELECT	DISTINCT E.ManagerID
+			FROM	EMPLOYEE_t AS E, SALES_REPRESENTATIVE_t AS SR
+			WHERE	E.EmployeeID = SR.EmployeeID
+			)
+
+
+--J. List the employee names of those that report directly to the manager of the sales manager. 
+--Hint: Your SQL statement must determine the sales manger before it can determine manager of the sales rep’s manager, 
+--and then it must determine the names of those that report to the manager of the sales rep’s manager.
+
+SELECT		EmployeeFirstName + ' ' + EmployeeLastName AS EmployeeName
+FROM		EMPLOYEE_t 
+WHERE		ManagerID IN
+			(
+			SELECT		DISTINCT ManagerID
+			FROM		EMPLOYEE_t
+			WHERE		EmployeeID IN
+						(
+						SELECT	DISTINCT E.ManagerID
+						FROM	EMPLOYEE_t AS E, SALES_REPRESENTATIVE_t AS SR
+						WHERE	E.EmployeeID = SR.EmployeeID
+						)
+			)
+
+
+--K. Provide an inventory report that lists the most costly items first. 
+--The inventory report should include product identification numbers, product descriptions, unit prices, supplier names, cost, and quantity supplied. 
+--Hint: the most costly item is the one in which the product of cost and quantity yields the largest value. Be careful not to confuse cost with price. 
+--Price is the value that the products are sold to the customers, and cost is the value that is paid to purchase the products from the suppliers. 
+--Also, be aware that the word “product” above refers to the result of multiplication (i.e., the product of cost and quantity).
+
+SELECT		P.ProductID, P.ProductDescription, P.UnitPrice, S.SupplierName, PS.ProductCost, PS.PurchasedQuantity
+FROM		PRODUCT_t AS P, PRODUCT_SUPPLIER_t AS PS, SUPPLIER_t AS S
+WHERE		P.ProductID = PS.ProductID
+  AND		PS.SupplierID = S.SupplierID
+ORDER BY	PS.ProductCost * PS.PurchasedQuantity DESC
+
+
+--L. List all of the employees in alphabetical order and each course they have completed in order of date completed. Hint: some employees might not have taken any courses.
+
+SELECT		E.EmployeeFirstName + ' ' + E.EmployeeLastName AS EmployeeName, C.CourseDescription
+FROM		EMPLOYEE_t AS E, EMPLOYEE_COURSE_t AS EC, COURSE_t AS C
+WHERE		E.EmployeeID = EC.EmployeeID
+  AND		EC.CourseID = C.CourseID
+  AND		EC.CompletionDate IS NOT NULL
+ORDER BY	E.EmployeeLastName, E.EmployeeFirstName, EC.CompletionDate
+
+--1 EMPLOYEE DATA
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (100, 'Gern', 'Blanston', 'Marketing Manager', '400 Temple Ave.', 'Pomona', 'CA', '91768', 11/02/1999, 210)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (110, 'Tim', 'Berwulf', 'Sales Representative', '200 Nutty Blvd.', 'Walnut', 'CA', '91788', 12/07/2002, 100)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (120, 'Elmer', 'Phudd', 'Sales Representative', '312 Indian Hill', 'Claremont', 'CA', '91711', 03/15/2004, 100)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (130, 'James', 'Bond', 'Product Development Associate', '1007 Bonita Ave.', 'San Dimas', 'CA', '91773', 07/07/2007, 190)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (140, 'Indiana', 'Jones', 'Collection Agent', '23 Imperial Hwy.', 'Brea', 'CA', '92821', 07/14/2000, 190)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (150, 'Arnold', 'Ziffle', 'Sales Representative', '45 State College', 'Fullerton', 'CA', '92831', 02/02/2008, 100)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (160, 'Sam', 'Drucker', 'Sales Representative', '3760 Village Center', 'Yorba Linda', 'CA', '92886', 09/20/2006, 100)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (170, 'Jethrow', 'Bodene', 'Accountant', '501 Red Gum', 'Pomona', 'CA', '91768', 04/01/2010, 190)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (180, 'Milburn', 'Driesdale', 'Sales Representative', '22 Acorn St.', 'Walnut', 'CA', '91788', 05/29/2011, 100)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (190, 'Jane', 'Hathoway', 'Administration Manager', '230 Harvard St.', 'Claremont', 'CA', '91711', 10/22/2000, 210)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (200, 'Kate', 'Bradley', 'Receptionist', '866 Mall St.', 'Brea', 'CA', '92821', 08/01/2012, 190)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (210, 'Thurston', 'Howell III', 'General Manager', '3000 Black Forrest Ln.', 'Yorba Linda', 'CA', '92885', 01/31/1995, null)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (220, 'Jonas', 'Grundy', 'Internal Auditor', '242 San Dimas Ave.', 'San Dimas', 'CA', '91773', 07/09/2013, 190)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (230, 'Laura', 'Croft', 'Sales Secretary', '14012 Indian Hill', 'Claremont', 'CA', '91711', 05/20/2010, 100)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (240, 'Homer', 'Simpson', 'Sales Trainee', '35621 Foothill', 'Rancho Cucamonga', 'CA', '91701', 08/25/2014, 100)
+INSERT INTO EMPLOYEE_t (EmployeeID, EmployeeFirstName, EmployeeLastName, EmployeeJobTitle, EmployeeStreet, EmployeeCity, EmployeeState, EmployeeZip, EmployeeHireDate, ManagerID) VALUES (250, 'Norman', 'Bates', 'Sales Representative', '444 A Street', 'La Verne', 'CA', '91750', 04/27/2013, 100)
+
+--2 SALES REP DATA
+INSERT INTO SALES_REPRESENTATIVE_t (EmployeeID, CommissionRate) VALUES (160, 0.0425)
+INSERT INTO SALES_REPRESENTATIVE_t (EmployeeID, CommissionRate) VALUES (110, 0.045)
+INSERT INTO SALES_REPRESENTATIVE_t (EmployeeID, CommissionRate) VALUES (120, 0.045)
+INSERT INTO SALES_REPRESENTATIVE_t (EmployeeID, CommissionRate) VALUES (180, 0.045)
+INSERT INTO SALES_REPRESENTATIVE_t (EmployeeID, CommissionRate) VALUES (250, 0.046)
+INSERT INTO SALES_REPRESENTATIVE_t (EmployeeID, CommissionRate) VALUES (150, 0.0475)
+
+--3 COURSE DATA
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (90, 'Neophite')
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (91, 'Accounting Reports')
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (92, 'Customer Relations')
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (95, 'Sales Prospect Hunting')
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (96, 'Intro Sales Training')
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (97, 'Advanced Sales Training')
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (98, 'Sales Management')
+INSERT INTO COURSE_t (CourseID, CourseDescription) VALUES (99, 'Executive Management')
+
+--4 EMPLOYEE COURSE
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (100, 90, '04/01/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (100, 96, '07/14/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (100, 98, '02/14/2016')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (110, 90, '04/01/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (110, 91, null)
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (110, 95, '05/20/2016')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (120, 90, '04/01/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (120, 96, '07/14/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (120, 95, '05/20/2016')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (130, 90, '04/01/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (140, 90, '06/14/2008')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (150, 90, '06/14/2008')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (150, 96, '07/14/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (150, 97, '05/29/2016')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (160, 90, '06/14/2008')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (160, 96, '07/14/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (180, 90, '04/01/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (180, 96, '07/14/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (190, 90, '06/14/2008')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (190, 91, '10/31/2016')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (200, 90, '06/14/2008')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (200, 92, '02/02/2009')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (210, 96, '07/14/2007')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (210, 98, '02/14/2009')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (210, 99, '03/15/2010')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (220, 90, '04/01/2015')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (230, 90, '06/01/2010')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (240, 90, '09/01/2014')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (240, 96, '10/23/2014')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (250, 90, '05/15/2013')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (250, 96, '07/14/2013')
+INSERT INTO EMPLOYEE_COURSE_t (EmployeeID, CourseID, CompletionDate) VALUES (250, 95, '09/15/2013')
+
+--5 PRODUCT DATA
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1298, 'Fire Alarm', 500, 82)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (2055, 'Book - IT Made Easy', 25, 48)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5511, 'Hack Saw', 25, 7)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (8007, 'Salt (50 Pound Bag)', 40, 24)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (2502, 'Ear Plugs', 3, 48)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (2002, 'Deluxe First Aid Kit', 50, 90)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (8438, 'Security Alarm', 800, 16)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (7490, 'Video Tape - How to teach IT', 30, 23)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1160, 'Book - 1001 Computer Lectures', 16.75, 32)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (8811, 'Snow Plow', 745, 51)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (8829, 'Snow Shovel', 30, 15)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1822, 'Paper Plates', 0.25, 77)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1709, 'Insect Spray', 2.5, 55)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1710, 'Rat Poison', 6, 46)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (2050, 'Economy Peanut Butter', 0.75, 31)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (6822, 'Bandages (Box of 1,000)', 6, 65)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1114, 'Carlton''s Valuable Database Projects', 17.85, 72)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1700, 'Ironing Board', 25, 40)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5252, '9-Iron Golf Club ', 120, 83)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5253, '8-Iron Golf Club', 120, 49)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5254, '7-Iron Golf Club', 120, 62)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5255, '6-Iron Golf Club', 120, 39)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5256, '5-Iron Golf Club', 120, 23)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5257, '4-Iron Golf Club', 120, 61)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5258, '3-Iron Golf Club', 120, 7)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5260, 'Driver Golf Club', 220, 68)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5261, '3-Wood Golf Club', 200, 1)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5262, '5-Wood Golf Club', 200, 4)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5263, 'Golf Bag', 150, 29)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5271, 'Putter Golf Club', 160, 75)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5291, 'Eggshell Golf Balls', 24, 25)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5290, 'Golf Club Set with Bag', 1600, 85)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5530, 'Saw Blade', 6, 60)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5531, 'Saw Handle', 12, 98)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (9882, 'Snowmobile', 5400, 57)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (866, 'Grease Remover', 4.25, 98)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (3931, 'Reconstituted Grape Jelly', 2.87, 18)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1705, 'Blender', 30, 71)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (1422, 'Ice Scraper', 3, 20)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (3033, 'Fly Swatter', 1, 23)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5998, 'Nut (3/4 inch)', 0.5, 8)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (5999, 'Bolt (3/4 inch)', 1, 80)
+INSERT INTO PRODUCT_t (ProductID, ProductDescription, UnitPrice, StockQuantity) VALUES (6224, 'Handle Grip', 3.5, 20)
+
+--6 SUPPLIER DATA
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (10, 'Electronics Gadgets Manufacturing Company', '221 Silicon Valley Blvd', 'Mt. View', 'CA', '94039-7542')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (15, 'Alarms and Things, Inc.', '100 Brooklin Bridge', 'New York', 'NY', '10016')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (18, 'Yamaha Snow Fun', '32 Degree Street', 'Frigid', 'MN', '48712')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (20, 'Mad Scientists'' Basement Corporation', '714 Old Spring Way', 'Troutman', 'NC', '28166')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (30, 'Ultra Cheap Consumables', '1840 Stonebrook Dr.', 'Knoxville', 'TN', '37923')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (40, 'Odds and Ends Manufacturing', '1 Lost Wallet Lane', 'El Sugundo', 'CA', '90245')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (50, 'Wild Swing Golf', '40 Knotts Alley', 'Agusta Winds', 'GA', '37022')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (60, 'Shocking Electrical Gizmos', '18 Toxic Sludge Blvd', 'Dismal Seepage', 'NJ', '08608')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (70, 'Iron Man Tools', '1312 Ena Rd', 'Honolulu', 'HI', '96818')
+INSERT INTO SUPPLIER_t (SupplierID, SupplierName, SupplierStreet, SupplierCity, SupplierState, SupplierZip) VALUES (80, 'Eine-Steen and Frankenburger Supplies', '627 Kaumaka Place', 'Honolulu', 'HI', '96825')
+
+--7 PRODUCT SUPPLIER DATA
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5530, 30, '4901', 2.25, 16)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5531, 30, '4902', 3.17, 17)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5511, 30, '4905', 27, 30)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1709, 30, '4920', 18, 300)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1710, 30, '4921', 4, 652)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (3931, 30, '4922', 0.3, 239)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1822, 30, '4933', 0.18, 15000)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (2002, 40, '4943', 32, 88)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (2502, 40, '4949', 2, 700)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (6822, 30, '4952', 4.5, 391)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (2050, 30, '4970', 0.59, 489)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (866, 30, '4976', 1.8, 600)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (9882, 18, 'ATSM 500', 2300, 1)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (2055, 20, 'BITE', 2, 74)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1160, 20, 'BITL', 7.5, 67)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5263, 50, 'CPG', 82, 67)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1114, 20, 'CVDBP', 1.25, 60)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1298, 10, 'EG-FA200', 312, 21)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (8438, 10, 'EG-SA100', 544, 5)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5291, 50, 'EGB', 12, 350)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5290, 50, 'EGB', 1000, 350)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (7490, 80, 'ES-ITV', 4.82, 2)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1298, 15, 'FA15', 315, 3)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5252, 50, 'IHF', 80, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5253, 50, 'IHF', 80, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5254, 50, 'IHF', 80, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5255, 50, 'IHF', 80, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5256, 50, 'IHF', 80, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5257, 50, 'IHF', 80, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5258, 50, 'IHF', 80, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5260, 50, 'IHF', 150, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5261, 50, 'IHF', 120, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5262, 50, 'IHF', 120, 33)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5511, 70, 'IMT-SAW', 31, 8)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5999, 40, 'OE-B', 0.05, 1000)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1705, 40, 'OE-EB', 6.8, 7)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (3033, 40, 'OE-FS', 0.15, 200)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (6224, 40, 'OE-HG', 0.75, 500)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1700, 40, 'OE-IB', 7, 44)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1422, 40, 'OE-IS', 0.25, 125)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5998, 40, 'OE-N', 0.01, 1000)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (8811, 40, 'OE-SP', 605, 5)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (8829, 40, 'OE-SS', 12, 21)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (8007, 40, 'S50', 36, 50)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (1298, 60, 'SEG-50', 314, 8)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (8438, 60, 'SEG-80', 505, 1)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (5271, 50, 'SHP', 90, 77)
+INSERT INTO PRODUCT_SUPPLIER_t (ProductID, SupplierID, VendorPartID, ProductCost, PurchasedQuantity) VALUES (7490, 20, 'VTIT', 4.8, 32)
+
+--8 FABRICATED DATA
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5258, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5261, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5257, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5256, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5262, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5255, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5254, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5253, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5252, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5260, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5263, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5271, 1)
+INSERT INTO FABRICATED_t (ProductID, PartID, PartQuantity) VALUES (5290, 5291, 1)
+
+--9 CUSTOMER DATA
+INSERT INTO CUSTOMER_t (CustomerID, CustomerName, CustomerStreet, CustomerCity, CustomerState, CustomerZip, CreditLimit, SalesRepID) VALUES (377, 'Leftover Diner', '3700 Baseline', 'Rialto', 'CA', '92377', 100, 180)
+INSERT INTO CUSTOMER_t (CustomerID, CustomerName, CustomerStreet, CustomerCity, CustomerState, CustomerZip, CreditLimit, SalesRepID) VALUES (897, 'Property Redistributors, Inc.', 'LA County Jail', 'Los Angeles', 'CA', '90087', 0, 120)
+INSERT INTO CUSTOMER_t (CustomerID, CustomerName, CustomerStreet, CustomerCity, CustomerState, CustomerZip, CreditLimit, SalesRepID) VALUES (1400, 'CIS Instructor Supply Corporation', '3801 West Temple Avenue', 'Pomona', 'CA', '91768', 400, 150)
+INSERT INTO CUSTOMER_t (CustomerID, CustomerName, CustomerStreet, CustomerCity, CustomerState, CustomerZip, CreditLimit, SalesRepID) VALUES (2000, 'Acme TNT', '5460 Dusty Ln.', 'Wiley', 'UT', '75688', 100000, 120)
+INSERT INTO CUSTOMER_t (CustomerID, CustomerName, CustomerStreet, CustomerCity, CustomerState, CustomerZip, CreditLimit, SalesRepID) VALUES (3876, 'Hawaii Snow Removal Service', '900 Kalanianaole Hwy', 'Honolulu', 'HI', '96825', 25000, 180)
+
+--10 ORDER DATA
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1515, 2000, '987', '01/14/2017', '01/24/2017', null)
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1516, 3876, 'DRE-152', '02/02/2017', '02/22/2017', '02/14/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1517, 897, '1', '02/14/2017', '02/22/2017', null)
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1518, 2000, '995', '02/28/2017', '03/04/2017', '03/02/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1519, 2000, '1008', '03/07/2017', '03/21/2017', null)
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1520, 3876, 'DRE-317', '04/11/2017', '04/15/2017', null)
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1521, 1400, 'ITIS500', '05/12/2017', '05/27/2017', null)
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1522, 1400, 'ITIS520', '05/27/2017', '06/01/2017', '05/27/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1523, 1400, 'ITIS531', '05/27/2017', '06/16/2017', '07/15/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1524, 3876, 'DRE-423', '06/13/2017', '07/04/2017', '07/15/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1525, 377, 'V2-AXR4', '07/13/2017', '07/15/2017', '07/15/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1526, 377, 'V2-AYD3', '07/15/2017', '07/20/2017', '07/19/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1527, 377, 'V2-AZJ9', '08/16/2017', '08/21/2017', '08/21/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1528, 377, 'V2-BBU3', '09/16/2017', '09/23/2017', '09/21/2017')
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1529, 897, '2', '10/04/2017', '10/13/2017', null)
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1530, 3876, 'DRE-611', '11/04/2017', '11/13/2017', null)
+INSERT INTO ORDER_t (OrderID, CustomerID, CustomerPONumber, OrderDate, DueDate, ShipDate) VALUES (1531, 377, 'V2-BBU3', '12/16/2017', '12/23/2017', '12/21/2017')
+
+--11 ORDER LINE DATA
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1515, 1298, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1516, 8007, 200)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1517, 5511, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1518, 2502, 125)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1519, 2002, 6)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1520, 8811, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1521, 2055, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1522, 7490, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1523, 1160, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1524, 8829, 3)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1525, 1822, 1000)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1526, 1709, 10)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1527, 1710, 12)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1528, 2050, 30)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1529, 8438, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1530, 6822, 2)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1531, 2050, 17)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1515, 8438, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1520, 9882, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1523, 1114, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1527, 866, 3)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1528, 3931, 5)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1529, 5290, 1)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1530, 2002, 6)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1531, 1710, 12)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1515, 1705, 30)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1520, 1422, 6)
+INSERT INTO ORDER_LINE_t (OrderID, ProductID, OrderQuantity) VALUES (1527, 3033, 50)
+
+
+
+
+
