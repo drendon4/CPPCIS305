@@ -1,0 +1,67 @@
+
+SELECT CustomerID, CustomerName, State
+FROM PineValley.dbo.CUSTOMER_t
+ORDER BY CustomerName
+
+
+SELECT CustomerID, CustomerName, State
+FROM PineValley.dbo.CUSTOMER_t
+ORDER BY State, CustomerName
+
+
+SELECT CustomerName, Street, City, State, Zip
+FROM PineValley.dbo.CUSTOMER_t
+WHERE CustomerName = 'Kaneohe Homes'
+
+
+SELECT ProductDescription AS 'Product Name', ProductID, StandardPrice
+FROM PineValley.dbo.PRODUCT_t
+ORDER BY ProductDescription
+
+
+SELECT ProductID, ProductDescription AS 'Product Name', StandardPrice, 
+	   (StandardPrice * 1.15) AS StandardPricePlus15
+FROM PineValley.dbo.PRODUCT_t
+
+
+SELECT AVG(StandardPrice) AS AvgStandardPrice
+FROM PineValley.dbo.PRODUCT_t
+WHERE ProductFinish = 'Natural Ash'
+
+SELECT ProductID, ProductDescription AS 'Product Name', StandardPrice, AvgPrice,
+	   (StandardPrice - AvgPrice) AS 'Standard - Average'
+FROM PineValley.dbo.PRODUCT_t, 
+	(
+	SELECT AVG(StandardPrice) AS AvgPrice
+	FROM PineValley.dbo.PRODUCT_t
+	) AS AVGPRICE_t
+
+
+SELECT ProductDescription AS 'Product Name', ProductID, StandardPrice
+FROM PineValley.dbo.PRODUCT_t, 
+	(
+	SELECT MAX(StandardPrice) AS MaxPrice 
+	FROM PineValley.dbo.PRODUCT_t
+	) AS MAXPRICE_t
+WHERE StandardPrice = MaxPrice
+
+
+SELECT OrderID, OrderDate
+FROM PineValley.dbo.ORDER_t
+WHERE OrderDate > '10/20/2016'
+
+
+SELECT ProductDescription AS 'Product Name', StandardPrice, ProductFinish
+FROM PineValley.dbo.PRODUCT_t
+WHERE (ProductDescription LIKE '%table' OR ProductDescription LIKE'%desk') 
+  AND StandardPrice > 300
+
+
+SELECT DISTINCT ProductID
+FROM PineValley.dbo.ORDER_LINE_t
+
+
+SELECT State, COUNT(State) AS CustomerCount
+FROM PineValley.dbo.CUSTOMER_t
+GROUP BY State
+HAVING COUNT(State) > 1
